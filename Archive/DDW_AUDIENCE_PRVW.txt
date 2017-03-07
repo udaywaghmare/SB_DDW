@@ -1,0 +1,252 @@
+%put _all_;
+%put &syshostname.;
+options mlogic mprint symbolgen;
+%put _all_;
+%let td_sas_db = sas_pulse_stg;
+%let td_base_db = ce_base;
+%let td_inc_db = ce_inc;
+%let td_server = tdprod1; 
+%let td_dsn = tdprod1_utf8;
+
+proc sql;
+connect to teradata as conn (user="&td_user" pass="&td_pwd" database=&td_base_db server=&td_server mode=teradata sql_functions=all);
+
+create table work.tmp1 as select * from connection to conn
+(
+    select
+        smx.frst_nm as CONTACT_FIRST_NAME,
+        smx.last_nm as CONTACT_LAST_NAME,
+        smx.full_nm as CONTACT_NAME,
+        smx.sfdc_cntct_id as CONTACT_ID,
+        smx.email_addr_id as EMAIL_ADDRESS,
+        smx.grp_acct_id as GROUP_ACCOUNT_ID,
+        smx.acct_id as ACCOUNT_ID,
+        smx.cust_nbr as CUSTOMER_NUMBER,
+        smx.acct_co_nm as COMPANY_NAME,
+        smx.grp_co_nm as GROUP_COMPANY_NAME,
+        smx.iso_lang_cd as ISO_LANGUAGE_CODE,
+        smx.iso_ctry_2_cd as ISO_COUNTRY_CODE,
+        smx.ctry_nm as COUNTRY_NAME, 
+        smx.gbl_seg_desc as GLOBAL_SEGMENT,
+        smx.sub_seg_desc as SUB_SEGMENT,
+        smx.rgn_desc as REGION,
+        smx.src_sys_nm as SOURCE_SYSTEM,
+        smx.prsn_greeting_txt as PERSON_GREETING,
+        smx.job_ttl_nm as CONTACT_JOB_TITLE,
+        smx.decsn_mkg_role_nm as DECISION_MAKING_ROLE,
+        smx.cntct_type_nm as CONTACT_TYPE,
+        smx.acct_exec_nm as ACCT_EXEC_NAME,
+        smx.acct_exec_email_addr_id as ACCT_EXEC_EMAIL,
+        smx.sls_rep_nm as SALES_REP_NAME,
+        smx.sls_rep_email_addr_id as SALES_REP_EMAIL,
+        smx.sls_rep_bdge_nbr as SALES_REP_BADGE_NUMBER,
+        smx.sls_seg_desc as SALES_SEGMENT,
+        smx.sls_vert_desc as SALES_VERTICAL,
+        smx.insd_sls_mgr_nm ISM_ASSIGNED_NAME,
+        smx.rgnl_sls_mgr_email_addr_id as RSM_EMAIL,
+        smx.rgnl_sls_mgr_nm as RSM_ASSIGNED_NAME,
+        smx.insd_sls_mgr_email_addr_id as ISM_EMAIL,
+        smx.orsd_nm as ORSD_NAME,
+        smx.orsd_email_addr_id as ORSD_EMAIL,
+        smx.gam_email_addr_id as GAM_Email,
+        smx.tam_email_addr_id as TAM_Email,
+
+
+        smx.svcs_acct_tm_email_addr_id as SERVICES_ACCT_TEAM_EMAIL,
+        smx.rad_cd as RAD_CODE,
+         smx.rad_nbr as RAD_NUMBER,
+        smx.srvy_type_nm as SURVEY_TYPE,
+        smx.signatory_nm as SIGNATORY_NAME,
+        smx.signatory_ttl as SIGNATORY_TITLE,
+        smx.survey_close_date as SURVEY_CLOSE_DATE,
+        smx.first_reminder_date as FIRST_REMINDER_DATE,
+        smx.second_reminder_date as SECOND_REMINDER_DATE,
+        smx.wave_desc as WAVE_DESCRIPTION,
+        smx.weighting_grp as WEIGHTING_GROUP,
+        smx.acct_rnk as ACCOUNT_RANKING,
+        smx.gmm_nbr as GMM_NUMBER,
+        smx.ce_email_addr_id as CE_EMAIL,
+        smx.srvy_src_nm as SURVEY_SOURCE,
+        cast(smx.so_dt as varchar(10)) as ORDER_DATE,    
+        smx.so_recency as RECENCY,
+        smx.so_nbr as ORDER_NUMBER,
+        smx.so_bu_id as BUSINESS_UNIT_ID,
+        smx.spare_field1 as SPARE_FIELD1,
+        smx.spare_field2 as SPARE_FIELD2,
+        smx.spare_field3 as SPARE_FIELD3,
+        smx.acct_exec_bdge_nbr as ACCOUNT_EXEC_BADGE_NUMBER,
+
+        smx.Det_Task_Owner_Badge_Number as DET_TASK_OWNER_BADGE_NUMBER,
+        smx.Pas_Task_Owner_Badge_Number as PAS_TASK_OWNER_BADGE_NUMBER,
+        smx.Pro_Task_Owner_Badge_Number as PRO_TASK_OWNER_BADGE_NUMBER,
+
+        smx.sfdc_task_link as SFDC_TASK_LINK,
+        smx.bounced_alert_flag as BOUNCED_ALERT_FLAG,
+        smx.no_response_alert_flag as NO_RESPONSE_ALERT_FLAG,
+        smx.ph_nbr as CONTACT_TEL_NO,
+        smx.top_parent_acct_id as HIGHEST_ACCOUNT_ID,
+        smx.top_parent_acct_nm as HIGHEST_ACCOUNT_NAME,
+        smx.gtm_nbr as GTM_NUMBER,
+        smx.prim_cntct as PRIMARY_CONTACT,
+        smx.cntct_status as CONTACT_STATUS,
+        smx.sfdc_acct_ownr_email_addr_id as SFDC_ACCOUNT_OWNER_EMAIL,
+        smx.gce_contact_id as GLOBAL_CE_CONTACT_ID
+    from sas_pulse_stg.comm_nps_smx_audience smx;
+);
+
+quit;
+
+proc sql;
+create table work.tmp2 as 
+SELECT
+TRIM(LEFT(	        tmp1.CONTACT_FIRST_NAME	))	  AS  	CONTACT_FIRST_NAME	,
+TRIM(LEFT(	        tmp1.CONTACT_LAST_NAME	))	  AS  	CONTACT_LAST_NAME	,
+TRIM(LEFT(	        tmp1.CONTACT_NAME	))	  AS  	CONTACT_NAME	,
+TRIM(LEFT(	        tmp1.CONTACT_ID	))	  AS  	CONTACT_ID	,
+TRIM(LEFT(	        tmp1.EMAIL_ADDRESS	))	  AS  	EMAIL_ADDRESS	,
+	        tmp1.GROUP_ACCOUNT_ID		  AS  	GROUP_ACCOUNT_ID	,
+	        tmp1.ACCOUNT_ID		  AS  	ACCOUNT_ID	,
+	        tmp1.CUSTOMER_NUMBER		  AS  	CUSTOMER_NUMBER	,
+TRIM(LEFT(	        tmp1.COMPANY_NAME	))	  AS  	COMPANY_NAME	,
+TRIM(LEFT(	        tmp1.GROUP_COMPANY_NAME	))	  AS  	GROUP_COMPANY_NAME	,
+TRIM(LEFT(	        tmp1.ISO_LANGUAGE_CODE	))	  AS  	ISO_LANGUAGE_CODE	,
+TRIM(LEFT(	        tmp1.ISO_COUNTRY_CODE	))	  AS  	ISO_COUNTRY_CODE	,
+TRIM(LEFT(	        tmp1.COUNTRY_NAME 	))	  AS  	COUNTRY_NAME 	,
+TRIM(LEFT(	        tmp1.GLOBAL_SEGMENT	))	  AS  	GLOBAL_SEGMENT	,
+TRIM(LEFT(	        tmp1.SUB_SEGMENT	))	  AS  	SUB_SEGMENT	,
+TRIM(LEFT(	        tmp1.REGION	))	  AS  	REGION	,
+TRIM(LEFT(	        tmp1.SOURCE_SYSTEM	))	  AS  	SOURCE_SYSTEM	,
+TRIM(LEFT(	        propcase(tmp1.PERSON_GREETING	)))	  AS  	PERSON_GREETING	,
+TRIM(LEFT(	        tmp1.CONTACT_JOB_TITLE	))	  AS  	CONTACT_JOB_TITLE	,
+TRIM(LEFT(	        tmp1.DECISION_MAKING_ROLE	))	  AS  	DECISION_MAKING_ROLE	,
+TRIM(LEFT(	        tmp1.CONTACT_TYPE	))	  AS  	CONTACT_TYPE	,
+TRIM(LEFT(	        tmp1.ACCT_EXEC_NAME	))	  AS  	ACCT_EXEC_NAME	,
+TRIM(LEFT(	        tmp1.ACCT_EXEC_EMAIL	))	  AS  	ACCT_EXEC_EMAIL	,
+TRIM(LEFT(	        tmp1.SALES_REP_NAME	))	  AS  	SALES_REP_NAME	,
+TRIM(LEFT(	        tmp1.SALES_REP_EMAIL	))	  AS  	SALES_REP_EMAIL	,
+TRIM(LEFT(	        tmp1.SALES_REP_BADGE_NUMBER	))	  AS  	SALES_REP_BADGE_NUMBER	,
+TRIM(LEFT(	        tmp1.SALES_SEGMENT	))	  AS  	SALES_SEGMENT	,
+TRIM(LEFT(	        tmp1.SALES_VERTICAL	))	  AS  	SALES_VERTICAL	,
+TRIM(LEFT(	        tmp1.ISM_ASSIGNED_NAME	))	  AS  	ISM_ASSIGNED_NAME	,
+TRIM(LEFT(	        tmp1.RSM_EMAIL	))	  AS  	RSM_EMAIL	,
+TRIM(LEFT(	        tmp1.RSM_ASSIGNED_NAME	))	  AS  	RSM_ASSIGNED_NAME	,
+TRIM(LEFT(	        tmp1.ISM_EMAIL	))	  AS  	ISM_EMAIL	,
+TRIM(LEFT(	        tmp1.ORSD_NAME	))	  AS  	ORSD_NAME	,
+TRIM(LEFT(	        tmp1.ORSD_EMAIL	))	  AS  	ORSD_EMAIL	,
+TRIM(LEFT(	         tmp1.GAM_Email	))	  AS  	 GAM_Email	,
+TRIM(LEFT(	        tmp1.TAM_Email	))	  AS  	TAM_Email	,
+TRIM(LEFT(	        tmp1.SERVICES_ACCT_TEAM_EMAIL	))	  AS  	SERVICES_ACCT_TEAM_EMAIL	,
+TRIM(LEFT(	        tmp1.RAD_CODE	))	  AS  	RAD_CODE	,
+TRIM(LEFT(	         tmp1.RAD_NUMBER	))	  AS  	 RAD_NUMBER	,
+TRIM(LEFT(	        tmp1.SURVEY_TYPE	))	  AS  	SURVEY_TYPE	,
+TRIM(LEFT(	        tmp1.SIGNATORY_NAME	))	  AS  	SIGNATORY_NAME	,
+TRIM(LEFT(	        tmp1.SIGNATORY_TITLE	))	  AS  	SIGNATORY_TITLE	,
+TRIM(LEFT(	        tmp1.SURVEY_CLOSE_DATE	))	  AS  	SURVEY_CLOSE_DATE	,
+TRIM(LEFT(	        tmp1.FIRST_REMINDER_DATE	))	  AS  	FIRST_REMINDER_DATE	,
+TRIM(LEFT(	        tmp1.SECOND_REMINDER_DATE	))	  AS  	SECOND_REMINDER_DATE	,
+TRIM(LEFT(	        tmp1.WAVE_DESCRIPTION	))	  AS  	WAVE_DESCRIPTION	,
+TRIM(LEFT(	        tmp1.WEIGHTING_GROUP	))	  AS  	WEIGHTING_GROUP	,
+TRIM(LEFT(	        tmp1.ACCOUNT_RANKING	))	  AS  	ACCOUNT_RANKING	,
+TRIM(LEFT(	        tmp1.GMM_NUMBER	))	  AS  	GMM_NUMBER	,
+TRIM(LEFT(	tmp1.CE_EMAIL	))	  AS  	CE_EMAIL	,
+TRIM(LEFT(	        tmp1.SURVEY_SOURCE	))	  AS  	SURVEY_SOURCE	,
+	        tmp1.ORDER_DATE    		  AS  	ORDER_DATE    	,
+TRIM(LEFT(	        tmp1.RECENCY	))	  AS  	RECENCY	,
+	        tmp1.ORDER_NUMBER		  AS  	ORDER_NUMBER	,
+	        tmp1.BUSINESS_UNIT_ID		  AS  	BUSINESS_UNIT_ID	,
+TRIM(LEFT(	        tmp1.SPARE_FIELD1	))	  AS  	SPARE_FIELD1	,
+TRIM(LEFT(	        tmp1.SPARE_FIELD2	))	  AS  	SPARE_FIELD2	,
+TRIM(LEFT(	        tmp1.SPARE_FIELD3	))	  AS  	SPARE_FIELD3	,
+	        tmp1.ACCOUNT_EXEC_BADGE_NUMBER		  AS  	ACCOUNT_EXEC_BADGE_NUMBER	,
+	        tmp1.DET_TASK_OWNER_BADGE_NUMBER		  AS  	DET_TASK_OWNER_BADGE_NUMBER	,
+	        tmp1.PAS_TASK_OWNER_BADGE_NUMBER		  AS  	PAS_TASK_OWNER_BADGE_NUMBER	,
+	        tmp1.PRO_TASK_OWNER_BADGE_NUMBER		  AS  	PRO_TASK_OWNER_BADGE_NUMBER	,
+TRIM(LEFT(	        tmp1.SFDC_TASK_LINK	))	  AS  	SFDC_TASK_LINK	,
+TRIM(LEFT(	        tmp1.BOUNCED_ALERT_FLAG	))	  AS  	BOUNCED_ALERT_FLAG	,
+TRIM(LEFT(	        tmp1.NO_RESPONSE_ALERT_FLAG	))	  AS  	NO_RESPONSE_ALERT_FLAG	,
+TRIM(LEFT(	        tmp1.CONTACT_TEL_NO	))	  AS  	CONTACT_TEL_NO	,
+	        tmp1.HIGHEST_ACCOUNT_ID		  AS  	HIGHEST_ACCOUNT_ID	,
+TRIM(LEFT(	        tmp1.HIGHEST_ACCOUNT_NAME	))	  AS  	HIGHEST_ACCOUNT_NAME	,
+TRIM(LEFT(	        tmp1.GTM_NUMBER	))	  AS  	GTM_NUMBER	,
+TRIM(LEFT(	        tmp1.PRIMARY_CONTACT	))	  AS  	PRIMARY_CONTACT	,
+TRIM(LEFT(	        tmp1.CONTACT_STATUS	))	  AS  	CONTACT_STATUS	,
+TRIM(LEFT(	        tmp1.SFDC_ACCOUNT_OWNER_EMAIL	))	  AS  	SFDC_ACCOUNT_OWNER_EMAIL	,
+	        tmp1.GLOBAL_CE_CONTACT_ID		  AS  	GLOBAL_CE_CONTACT_ID	
+
+
+    from work.tmp1 as tmp1;
+
+quit;
+LIBNAME saslib 'J:\Production_J\EBISAS_GLOBAL_CE\UDAY\COMM_NPS_FILES';
+data saslib.comm_nps_smx_4; set work.tmp1;
+data saslib.comm_nps_smx_5; set work.tmp2;
+run;
+/*
+data work.tmp3 ; set  work.tmp2;
+    where Region = 'APJ' and SOURCE_SYSTEM = 'DDW';
+run;
+
+filename out "\\wn7x64-2m33rw1\Data\COMMERCIAL_NPS\FY15_1H\CONTACT_DATA\AUDIENCE_PREVIEW_FINAL\DDW\APJ_DDW(0.01).utf16.txt" encoding = 'utf-16le';
+
+proc export
+    data = work.tmp3
+    outfile = out
+    dbms = dlm
+    replace;
+    delimiter = '09'x;
+run;
+*/
+data work.tmp3 ; set  work.tmp2;
+    where Region = 'EMEA'  and SOURCE_SYSTEM = 'DDW';
+run;
+
+filename out "\\wn7x64-2m33rw1\Data\COMMERCIAL_NPS\FY15_1H\CONTACT_DATA\AUDIENCE_PREVIEW_FINAL\DDW\EMEA_DDW(0.01).utf16.txt" encoding = 'utf-16le';
+
+proc export
+    data = work.tmp3
+    outfile = out
+    dbms = dlm
+    replace;
+    delimiter = '09'x;
+run;
+/*
+data work.tmp3 ; set  work.tmp2;
+    where Region in ('LA')  and SOURCE_SYSTEM = 'DDW';
+run;
+
+filename out "\\wn7x64-2m33rw1\Data\COMMERCIAL_NPS\FY15_1H\CONTACT_DATA\AUDIENCE_PREVIEW_FINAL\DDW\LA_DDW(0.01).utf16.txt" encoding = 'utf-16le';
+
+proc export
+    data = work.tmp3
+    outfile = out
+    dbms = dlm
+    replace;
+    delimiter = '09'x;
+run;
+
+data work.tmp3 ; set  work.tmp2;
+    where Region in ('NA')  and SOURCE_SYSTEM = 'DDW';
+run;
+
+filename out "\\wn7x64-2m33rw1\Data\COMMERCIAL_NPS\FY15_1H\CONTACT_DATA\AUDIENCE_PREVIEW_FINAL\DDW\NA_DDW(0.01).utf16.txt" encoding = 'utf-16le';
+
+proc export
+    data = work.tmp3
+    outfile = out
+    dbms = dlm
+    replace;
+    delimiter = '09'x;
+run;
+
+filename out "\\wn7x64-2m33rw1\Data\COMMERCIAL_NPS\FY15_1H\CONTACT_DATA\AUDIENCE_PREVIEW_FINAL\DDW\WW_DDW(0.01).utf16.txt" encoding = 'utf-16le';
+data work.tmp3 ; set  work.tmp2;
+run;
+proc export
+    data = work.tmp3
+    outfile = out
+    dbms = dlm
+    replace;
+    delimiter = '09'x;
+run;
+
+

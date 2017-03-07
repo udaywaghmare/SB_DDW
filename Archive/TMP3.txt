@@ -1,0 +1,99 @@
+options mlogic mprint symbolgen;
+
+%global td_user; 
+%global td_pwd;
+%global td_db;
+%global td_server;
+
+%global import_dir;
+
+%let import_dir = '';
+
+%let td_sas_db = sas_pulse_stg;
+%let td_base_db = ce_base;
+%let td_inc_db = ce_inc;
+%let td_server = tdprod1; 
+
+LIBNAME tdsas teradata user="&td_user" pass="&td_pwd" database=&td_sas_db server=&td_server;
+
+LIBNAME saslib 'J:\Production_J\EBISAS_GLOBAL_CE\UDAY\COMM_NPS_FILES';
+
+proc sql;
+connect to teradata as conn (user="&td_user" pass="&td_pwd" database=&td_sas_db server=&td_server mode=teradata sql_functions=all);
+
+execute(delete from sas_pulse_stg.comm_nps_sb_trans_tmp3 all;) by conn;
+
+execute(
+    insert into sas_pulse_stg.comm_nps_sb_trans_tmp3
+    (
+        evnt_dt,
+        evnt_dts,
+        cnsld_src_txn_id,
+        cnsld_src_txn_bu_id,
+        so_nbr,
+        so_bu_id,
+        so_lcl_chnl_cd,
+        so_dt,
+        so_inv_dt,
+        qte_nbr,
+        qte_bu_id,
+        qte_lcl_chnl_cd,
+        qte_dt,
+        prim_sls_assoc_nbr,
+        secnd_sls_assoc_nbr,
+        sys_itm_cls_nm,
+        sys_flg,
+        snp_flg,
+        svcs_flg,
+        sls_chnl_cd,
+        tot_revn_disc_amt,
+        ord_dispos_stat_cd,
+        sls_type_cd,
+        cust_bu_id,
+        cust_lcl_chnl_cd,
+        bilt_cust_nbr,
+        bilt_src_cust_id,
+        bilt_addr_seq_id,
+        bilt_cntct_id,
+        shpto_cust_nbr,
+        shpto_src_cust_id,
+        shpto_addr_seq_id,
+        shpto_cntct_id
+    )
+    select
+        tmp2.evnt_dt,
+        tmp2.evnt_dts,
+        tmp2.cnsld_src_txn_id,
+        tmp2.cnsld_src_txn_bu_id,
+        tmp2.so_nbr,
+        tmp2.so_bu_id,
+        tmp2.so_lcl_chnl_cd,
+        tmp2.so_dt,
+        tmp2.so_inv_dt,
+        tmp2.qte_nbr,
+        tmp2.qte_bu_id,
+        tmp2.qte_lcl_chnl_cd,
+        tmp2.qte_dt,
+        tmp2.prim_sls_assoc_nbr,
+        tmp2.secnd_sls_assoc_nbr,
+        tmp2.sys_itm_cls_nm,
+        tmp2.sys_flg,
+        tmp2.snp_flg,
+        tmp2.svcs_flg,
+        tmp2.sls_chnl_cd,
+        tmp2.tot_revn_disc_amt,
+        tmp2.ord_dispos_stat_cd,
+        tmp2.sls_type_cd,
+        tmp2.cust_bu_id,
+        tmp2.cust_lcl_chnl_cd,
+        tmp2.bilt_cust_nbr,
+        tmp2.bilt_src_cust_id,
+        tmp2.bilt_addr_seq_id,
+        tmp2.bilt_cntct_id,
+        tmp2.shpto_cust_nbr,
+        tmp2.shpto_src_cust_id,
+        tmp2.shpto_addr_seq_id,
+        tmp2.shpto_cntct_id
+    from sas_pulse_stg.comm_nps_sb_trans_tmp2 tmp2;) by conn;
+
+quit;

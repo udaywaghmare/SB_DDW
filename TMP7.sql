@@ -1,0 +1,144 @@
+delete from tmp_work_db.comm_nps_sb_trans_tmp7 all;
+
+
+INSERT INTO tmp_work_db.comm_nps_sb_trans_tmp7
+    (
+        evnt_dt,
+        evnt_dts,
+        cnsld_src_txn_id,
+        cnsld_src_txn_bu_id,
+        so_nbr,
+        so_bu_id,
+        so_lcl_chnl_cd,
+        so_dt,
+        so_inv_dt,
+        qte_nbr,
+        qte_bu_id,
+        qte_lcl_chnl_cd,
+        qte_dt,
+        prim_sls_assoc_nbr,
+        secnd_sls_assoc_nbr,
+        sls_rep_bdge_nbr,
+        sls_rep_email_addr_id,
+        sys_itm_cls_nm,
+        sys_flg,
+        snp_flg,
+        svcs_flg,
+        sls_chnl_cd,
+        tot_revn_disc_amt,
+        acct_id,
+        acct_co_nm,
+        cust_bu_id,
+        cust_nbr,
+        cust_lcl_chnl_cd,
+        cust_co_nm,
+        iso_ctry_cd_2,
+        iso_lang_cd,
+        frst_nm,
+        last_nm,
+        full_nm,
+        email_addr_id,
+        domain_email_addr_id,
+        ph_nbr,
+        recency
+    )
+    SELECT    
+        tmp6.evnt_dt,
+        tmp6.evnt_dts,
+        tmp6.cnsld_src_txn_id,
+        tmp6.cnsld_src_txn_bu_id,
+        tmp6.so_nbr,
+        tmp6.so_bu_id,
+        tmp6.so_lcl_chnl_cd,
+        tmp6.so_dt,
+        tmp6.so_inv_dt,
+        tmp6.qte_nbr,
+        tmp6.qte_bu_id,
+        tmp6.qte_lcl_chnl_cd,
+        tmp6.qte_dt,
+        tmp6.prim_sls_assoc_nbr,
+        tmp6.secnd_sls_assoc_nbr,
+        MAX(CASE WHEN pgh.rgn_abbr IN ('APJ') THEN aa.assoc_bdge_nbr
+             WHEN tmp6.cnsld_src_txn_bu_id = 11 THEN ad.assoc_bdge_nbr
+             WHEN tmp6.cnsld_src_txn_bu_id = 707 THEN ad3.assoc_bdge_nbr
+             WHEN pgh.rgn_abbr = 'AMER' THEN COALESCE(ad2.assoc_bdge_nbr, ad.assoc_bdge_nbr)
+             WHEN pgh.rgn_abbr IN ('EMEA') THEN ad4.SLS_REP_BDGE_NBR
+             ELSE NULL
+        END) AS sls_rep_bdge_nbr,
+        CASE WHEN pgh.rgn_abbr IN ('EMEA') THEN ad4.SLS_REP_EMAIL ELSE NULL END AS sls_rep_email_addr_id,
+        tmp6.sys_itm_cls_nm,
+        tmp6.sys_flg,
+        tmp6.snp_flg,
+        tmp6.svcs_flg,
+        tmp6.sls_chnl_cd,
+        tmp6.tot_revn_disc_amt,
+        tmp6.acct_id,
+        tmp6.acct_co_nm,
+        tmp6.cust_bu_id,
+        tmp6.cust_nbr,
+        tmp6.cust_lcl_chnl_cd,
+        tmp6.cust_co_nm,
+        COALESCE(tmp6.iso_ctry_cd_2, cll.iso_ctry_2_cd) AS iso_ctry_cd_2,
+        COALESCE(tmp6.iso_lang_cd, cll.iso_lang_cd) AS iso_lang_cd,
+        tmp6.frst_nm,
+        tmp6.last_nm,
+        tmp6.full_nm,
+        tmp6.email_addr_id,
+        SUBSTR(email_addr_id, CASE WHEN POSITION('@' IN email_addr_id) = 0 THEN NULL ELSE POSITION('@' IN email_addr_id) END) AS domain_email_addr,
+        tmp6.work_phone AS ph_nbr,
+        CASE WHEN (SELECT MAX(evnt_dt) FROM tmp_work_db.comm_nps_sb_trans_tmp6) - tmp6.evnt_dt < 180 THEN  '0-6 Months'       
+             ELSE '7-12 Months'    END AS recency
+    FROM tmp_work_db.comm_nps_sb_trans_tmp6 tmp6
+    LEFT OUTER JOIN 
+    (SELECT bu_id, iso_ctry_2_cd, iso_lang_cd 
+     FROM ce_base.survey_ctry_lang_lkup
+     QUALIFY RANK() OVER (PARTITION BY bu_id ORDER BY iso_ctry_2_cd) = 1) cll
+        ON tmp6.cust_bu_id = cll.bu_id
+    INNER JOIN corp_drm_pkg.phys_geo_hier pgh ON tmp6.cust_bu_id = pgh.bu_id
+    LEFT OUTER JOIN party_pkg.agnt_assoc aa
+       ON tmp6.prim_sls_assoc_nbr = aa.agnt_assoc_nbr
+       AND tmp6.cnsld_src_txn_bu_id = aa.bu_id
+    LEFT OUTER JOIN party_pkg.assoc_dim ad
+       ON tmp6.prim_sls_assoc_nbr = TRIM(TRIM(TRAILING '.' FROM CAST(ad.doms_login_id AS VARCHAR(12))))
+       AND ad.src_eff_end_dt = '9999-12-31'
+    LEFT OUTER JOIN party_pkg.assoc_dim ad2
+       ON tmp6.prim_sls_assoc_nbr = TRIM(TRIM(TRAILING '.' FROM CAST(ad2.doms_login2 AS VARCHAR(12))))
+       AND ad2.src_eff_end_dt = '9999-12-31'
+    LEFT OUTER JOIN party_pkg.assoc_dim ad3
+       ON tmp6.prim_sls_assoc_nbr = TRIM(TRIM(TRAILING '.' FROM CAST(ad3.doms_login3 AS VARCHAR(12))))
+       AND ad3.src_eff_end_dt = '9999-12-31'
+    LEFT OUTER JOIN 
+        (
+        SELECT  
+        t_6.CNSLD_SRC_TXN_ID,t_6.CNSLD_SRC_TXN_BU_ID,MAX(she_50025.SALESREP_NUM) AS SLS_REP_BDGE_NBR, MAX(she_50025."SALESREP_EMAIL_ADDRESS") AS SLS_REP_EMAIL
+        FROM  tmp_work_db.comm_nps_sb_trans_tmp6 t_6
+        LEFT OUTER JOIN euro_fin.order_header_all_euro ohe
+                            ON t_6.so_nbr = ohe.order_num    AND t_6.so_bu_id = ohe.business_unit_id
+        LEFT OUTER JOIN EURO_FIN.E_SALESREP_HIER_EURO she_50025 ON 
+                            (ohe."ORDER_INV_DATE_DATE">=she_50025."TEAM_BEGIN_DATE"  AND ohe."ORDER_INV_DATE_DATE"<=she_50025."TEAM_END_DATE" 
+                             AND ohe."BUSINESS_UNIT_ID"=she_50025."BUSINESS_UNIT_ID" AND ohe."SALESREP_NUM"=she_50025."SALESREP_NUM")
+        WHERE  ISO_CTRY_CD_2     IN ('GB'    ,'FR'    ,'DE'    ,'AT'    ,'BE'    ,'DK'    ,'IE'    ,'IT'    ,'NL'    ,'NO'    ,'ES'    ,'SE'    ,'CH')    
+        GROUP BY 1,2
+        ) ad4 ON ad4.CNSLD_SRC_TXN_ID = tmp6.CNSLD_SRC_TXN_ID     AND ad4.CNSLD_SRC_TXN_BU_ID = tmp6.CNSLD_SRC_TXN_BU_ID
+
+    WHERE tmp6.email_addr_id IS NOT NULL
+        AND tmp6.email_addr_id LIKE '%@%.%'
+        AND tmp6.email_addr_id NOT LIKE '%@dell.com%'
+        AND tmp6.email_addr_id NOT LIKE '%@dellteam.com%'
+        AND tmp6.email_addr_id NOT LIKE '%@%.dell.com%'
+        AND tmp6.email_addr_id NOT LIKE '%@perot.com%'
+        AND tmp6.email_addr_id NOT LIKE '%@perotsystems.com%'
+        AND tmp6.email_addr_id NOT LIKE '%@ps.net%'
+        AND tmp6.email_addr_id NOT LIKE '%@tellurian.com%'
+        AND tmp6.email_addr_id NOT IN (SELECT email_addr_id FROM ce_base.SURVEY_EMAIL_XCLSN_LKUP)
+    GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38;
+
+
+
+update abc
+        from tmp_work_db.comm_nps_sb_trans_tmp7 abc, (SEL source_number, source_email FROM FINANCE.JTF_RS_RESOURCE_EXTNS) SR
+        set sls_rep_email_addr_id = sr.source_email
+        where abc.sls_rep_bdge_nbr = sr.source_number
+        and abc.sls_rep_email_addr_id is null
+    ;
+

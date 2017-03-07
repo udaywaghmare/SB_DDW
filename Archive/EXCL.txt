@@ -1,0 +1,120 @@
+%global td_user; 
+%global td_pwd;
+%global td_db;
+%global td_server;
+%global import_dir;
+
+%let import_dir = '';
+%let td_sas_db = sas_pulse_stg;
+%let td_base_db = ce_base;
+%let td_inc_db = ce_inc;
+%let td_server = tdprod1; 
+
+LIBNAME tdsas teradata user="&td_user" pass="&td_pwd" database=&td_sas_db server=&td_server;
+LIBNAME saslib 'J:\Production_J\EBISAS_GLOBAL_CE\UDAY\COMM_NPS_FILES';
+
+proc sql;
+connect to teradata as conn (user="&td_user" pass="&td_pwd" database=&td_sas_db server=&td_server mode=teradata sql_functions=all);
+
+execute(delete from sas_pulse_stg.comm_nps_sb_trans_excl all;) by conn;
+
+execute(
+    insert into sas_pulse_stg.comm_nps_sb_trans_excl
+    select
+        cntct.email_addr_id,
+        max(ce.excl_src)
+    from sas_pulse_stg.comm_nps_sb_trans_final cntct 
+    inner join sas_pulse_stg.comm_nps_cntct_excl ce 
+        on cntct.email_addr_id = ce.email_addr_id
+    where ce.excl_src in ('SMX Opt Out')
+    /*where ce.excl_src in ('SMX Opt Out', 'Prev 1Q Response', 'Prev 4Q Bounce', 'Prev 1Q Invitation')*/
+        and cntct.email_addr_id not in (select email_addr_id from sas_pulse_stg.comm_nps_sb_trans_excl)
+    group by 1;) by conn;
+
+execute(
+    insert into sas_pulse_stg.comm_nps_sb_trans_excl
+    select
+        cntct.email_addr_id,
+        'GEMS Opt Out' as excl_src
+    from sas_pulse_stg.comm_nps_sb_trans_final cntct    
+    inner join marcom.email_subscriber es 
+        on cntct.email_addr_id = trim(es.email_address)
+    where es.emailable_flag = 'N'
+        and cntct.email_addr_id not in (select email_addr_id from sas_pulse_stg.comm_nps_sb_trans_excl)
+    group by 1,2;) by conn;
+
+execute(
+    insert into sas_pulse_stg.comm_nps_sb_trans_excl
+    select
+        cntct.email_addr_id,
+        'Pulse Opt Out' as excl_src
+    from sas_pulse_stg.comm_nps_sb_trans_final cntct
+    inner join ce_base.survey_do_not_dstrb_list dnd 
+        on cntct.email_addr_id = dnd.email_addr_id
+    where dnd.email_type_flg = 'E' 
+        and cntct.email_addr_id not in (select email_addr_id from sas_pulse_stg.comm_nps_sb_trans_excl)
+    group by 1,2;) by conn;
+
+execute(
+    insert into sas_pulse_stg.comm_nps_sb_trans_excl    
+    select
+        cntct.email_addr_id,
+        'Pulse Opt Out' as excl_src
+    from sas_pulse_stg.comm_nps_sb_trans_final cntct
+    inner join ce_base.survey_do_not_dstrb_list dnd 
+        on cntct.domain_email_addr_id = dnd.email_addr_id
+    where dnd.email_type_flg = 'D' 
+        and cntct.email_addr_id not in (select email_addr_id from sas_pulse_stg.comm_nps_sb_trans_excl)
+    group by 1,2;) by conn;
+
+
+execute(
+    insert into sas_pulse_stg.comm_nps_sb_trans_excl    
+    select
+        cntct.email_addr_id,
+        'FY14Q4 CON/REU' as excl_src
+    from sas_pulse_stg.comm_nps_sb_trans_final cntct
+    where    EMAIL_ADDR_ID IN(SELECT email_addr_id FROM  sas_pulse_stg.survey_invite WHERE wave_desc = 'FY15Q1')
+            and cntct.email_addr_id not in (select email_addr_id from sas_pulse_stg.comm_nps_sb_trans_excl)
+    group by 1,2;) by conn;
+
+execute(
+    insert into sas_pulse_stg.comm_nps_sb_trans_excl    
+    select
+        cntct.email_addr_id,
+        'Commercial SFDC' as excl_src
+    from sas_pulse_stg.comm_nps_sb_trans_final cntct
+    where    EMAIL_ADDR_ID IN( SELECT email_addr_id FROM sas_pulse_stg.comm_nps_acct_seltn_4 )
+            and cntct.email_addr_id not in (select email_addr_id from sas_pulse_stg.comm_nps_sb_trans_excl)
+    group by 1,2;) by conn;
+
+execute(
+    insert into sas_pulse_stg.comm_nps_sb_trans_excl    
+    select
+        cntct.email_addr_id,
+        'OEM' as excl_src
+    from sas_pulse_stg.comm_nps_sb_trans_final cntct
+    where    EMAIL_ADDR_ID IN(SELECT email_addr_id FROM sas_pulse_STG.oem_email_check )
+            and cntct.email_addr_id not in (select email_addr_id from  sas_pulse_stg.comm_nps_oem_cntct )
+    group by 1,2;) by conn;
+
+execute(
+    INSERT INTO sas_pulse_stg.comm_nps_sb_trans_excl    
+    SELECT
+        cntct.email_addr_id,
+        'Channel' AS excl_src
+    FROM sas_pulse_stg.comm_nps_sb_trans_final cntct
+    WHERE    EMAIL_ADDR_ID IN
+	(SELECT smx.email_addr_id 
+    FROM sas_pulse_stg.comm_nps_cp_final smx
+    WHERE smx.email_addr_id NOT IN (SELECT email_addr_id FROM sas_pulse_stg.comm_nps_sb_trans_excl)
+    GROUP BY 1);) by conn;
+
+
+
+execute(collect stats on sas_pulse_stg.comm_nps_sb_trans_excl;) by conn;
+
+quit;
+
+
+

@@ -1,0 +1,154 @@
+%global td_user; 
+%global td_pwd;
+%global td_db;
+%global td_server;
+
+%global import_dir;
+
+%let import_dir = '';
+
+%let td_sas_db = sas_pulse_stg;
+%let td_base_db = ce_base;
+%let td_inc_db = ce_inc;
+%let td_server = tdprod1; 
+
+LIBNAME tdsas teradata user="&td_user" pass="&td_pwd" database=&td_sas_db server=&td_server;
+LIBNAME saslib 'J:\Production_J\EBISAS_GLOBAL_CE\UDAY\COMM_NPS_FILES';
+
+
+proc sql;
+connect to teradata as conn ( user="&td_user" pass="&td_pwd" database=&td_sas_db server=&td_server mode=teradata sql_functions=all);
+/*
+execute(delete from sas_pulse_stg.comm_nps_sb_trans_smpl all;) by conn;
+*/
+execute(
+    insert into sas_pulse_stg.comm_nps_sb_trans_smpl
+    select 
+        *
+    from sas_pulse_stg.comm_nps_sb_trans_final cntct
+    where cntct.email_addr_id not in (select email_addr_id from sas_pulse_stg.comm_nps_sb_trans_excl)
+    sample
+        when iso_ctry_cd_2 = 'CN' and sls_chnl_cd = 'OFFLINE' then 700
+        when iso_ctry_cd_2 = 'CN' and sls_chnl_cd = 'ONLINE' then 300 
+        when iso_ctry_cd_2 = 'JP' and sls_chnl_cd = 'OFFLINE' then 1800 /*FY15H1*/
+        when iso_ctry_cd_2 = 'JP' and sls_chnl_cd = 'ONLINE' then 1200 /*FY15H1*/
+        when iso_ctry_cd_2 = 'AU' and sls_chnl_cd = 'OFFLINE' then 425 /*FY15H1*/
+        when iso_ctry_cd_2 = 'AU' and sls_chnl_cd = 'ONLINE' then 425 /*FY15H1*/
+        when iso_ctry_cd_2 = 'IN' and sls_chnl_cd = 'OFFLINE' then 240 /*FY15H1*/
+        /*
+        when iso_ctry_cd_2 = 'HK' and sls_chnl_cd = 'OFFLINE' then 250
+        when iso_ctry_cd_2 = 'HK' and sls_chnl_cd = 'ONLINE' then 150
+        when iso_ctry_cd_2 = 'KR' and sls_chnl_cd = 'OFFLINE' then 350
+        when iso_ctry_cd_2 = 'KR' and sls_chnl_cd = 'ONLINE' then 150
+        when iso_ctry_cd_2 = 'MY' and sls_chnl_cd = 'OFFLINE' then 350
+        when iso_ctry_cd_2 = 'MY' and sls_chnl_cd = 'ONLINE' then 150
+        when iso_ctry_cd_2 = 'NZ' and sls_chnl_cd = 'OFFLINE' then 500
+        when iso_ctry_cd_2 = 'NZ' and sls_chnl_cd = 'ONLINE' then 350
+        when iso_ctry_cd_2 = 'SG' and sls_chnl_cd = 'OFFLINE' then 350
+        when iso_ctry_cd_2 = 'SG' and sls_chnl_cd = 'ONLINE' then 150
+        when iso_ctry_cd_2 = 'TW' and sls_chnl_cd = 'OFFLINE' then 400
+        when iso_ctry_cd_2 = 'TW' and sls_chnl_cd = 'ONLINE' then 250
+        when iso_ctry_cd_2 = 'TH' and sls_chnl_cd = 'OFFLINE' then 350
+        */
+    end;) by conn;
+
+
+execute(
+    insert into sas_pulse_stg.comm_nps_sb_trans_smpl
+    select 
+        *
+    from sas_pulse_stg.comm_nps_sb_trans_final cntct
+    where cntct.email_addr_id not in (select email_addr_id from sas_pulse_stg.comm_nps_sb_trans_excl) 
+        and cntct.email_addr_id not in (select cntct.email_addr_id from sas_pulse_stg.comm_nps_cntct_final cntct)
+        and ( iso_ctry_cd_2 <> 'US' or (iso_ctry_cd_2 = 'US' and cust_lcl_chnl_cd = '04')) --  ALOT OF LCL_CHL_CD 04 FOR US IS NOW 12
+    sample
+        when iso_ctry_cd_2 = 'US' and sls_chnl_cd = 'OFFLINE' then 11000
+        when iso_ctry_cd_2 = 'US' and sls_chnl_cd = 'ONLINE' then 11000
+        when iso_ctry_cd_2 = 'CA' and sls_chnl_cd = 'OFFLINE' then 2000 /*FY15H1*/
+        when iso_ctry_cd_2 = 'CA' and sls_chnl_cd = 'ONLINE' then 2000 /*FY15H1*/
+        when iso_ctry_cd_2 = 'BR' and sls_chnl_cd = 'OFFLINE' then 1500 /*FY15H1*/
+        when iso_ctry_cd_2 = 'BR' and sls_chnl_cd = 'ONLINE' then 1500 /*FY15H1*/
+        when iso_ctry_cd_2 = 'MX' and sls_chnl_cd = 'OFFLINE' then 1000 /*FY15H1*/
+        when iso_ctry_cd_2 = 'MX' and sls_chnl_cd = 'ONLINE' then 1000 /*FY15H1*/
+        /*
+        when iso_ctry_cd_2 = 'AR' and sls_chnl_cd = 'OFFLINE' then 200
+        when iso_ctry_cd_2 = 'AR' and sls_chnl_cd = 'ONLINE' then 200
+        when iso_ctry_cd_2 = 'CL' and sls_chnl_cd = 'OFFLINE' then 265
+        when iso_ctry_cd_2 = 'CL' and sls_chnl_cd = 'ONLINE' then 265
+        when iso_ctry_cd_2 = 'CO' and sls_chnl_cd = 'OFFLINE' then 327
+        when iso_ctry_cd_2 = 'CO' and sls_chnl_cd = 'ONLINE' then 327
+        when iso_ctry_cd_2 = 'PE' and sls_chnl_cd = 'OFFLINE' then 20
+        when iso_ctry_cd_2 = 'PE' and sls_chnl_cd = 'ONLINE' then 20
+        when iso_ctry_cd_2 = 'PR' and sls_chnl_cd = 'OFFLINE' then 23
+        when iso_ctry_cd_2 = 'PR' and sls_chnl_cd = 'ONLINE' then 23
+        */
+    end;) by conn;
+
+/*
+execute(
+    insert into sas_pulse_stg.comm_nps_sb_trans_smpl
+    select 
+        *
+    from sas_pulse_stg.comm_nps_sb_trans_final cntct
+    where cntct.email_addr_id not in (select email_addr_id from sas_pulse_stg.comm_nps_sb_trans_excl)
+    and cntct.email_addr_id not in (select cntct.email_addr_id from sas_pulse_stg.comm_nps_cntct_final cntct)
+    sample
+         when iso_ctry_cd_2 =     'GB'    and    sls_chnl_cd = 'OFFLINE' then     864 /*FY14Q41
+         when iso_ctry_cd_2 =     'GB'    and    sls_chnl_cd = 'ONLINE' then     864
+
+         when iso_ctry_cd_2 =     'FR'    and    sls_chnl_cd = 'OFFLINE' then     622
+         when iso_ctry_cd_2 =     'FR'    and    sls_chnl_cd = 'ONLINE' then     622
+
+         when iso_ctry_cd_2 =     'DE'    and    sls_chnl_cd = 'OFFLINE' then     562
+          when iso_ctry_cd_2 =     'DE'    and    sls_chnl_cd = 'ONLINE' then     562
+/*
+         when iso_ctry_cd_2 =     'AT'    and    sls_chnl_cd = 'OFFLINE' then     100
+         when iso_ctry_cd_2 =     'BE'    and    sls_chnl_cd = 'OFFLINE' then     154
+         when iso_ctry_cd_2 =     'DK'    and    sls_chnl_cd = 'OFFLINE' then     100
+         when iso_ctry_cd_2 =     'IE'    and    sls_chnl_cd = 'OFFLINE' then     170
+         when iso_ctry_cd_2 =     'IT'    and    sls_chnl_cd = 'OFFLINE' then     178
+         when iso_ctry_cd_2 =     'NL'    and    sls_chnl_cd = 'OFFLINE' then     335
+         when iso_ctry_cd_2 =     'NO'    and    sls_chnl_cd = 'OFFLINE' then     100
+         when iso_ctry_cd_2 =     'ES'    and    sls_chnl_cd = 'OFFLINE' then     214
+         when iso_ctry_cd_2 =     'SE'    and    sls_chnl_cd = 'OFFLINE' then     219
+         when iso_ctry_cd_2 =     'CH'    and    sls_chnl_cd = 'OFFLINE' then     121
+         when iso_ctry_cd_2 =     'FR'    and    sls_chnl_cd = 'ONLINE' then     1186
+
+         when iso_ctry_cd_2 =     'AT'    and    sls_chnl_cd = 'ONLINE' then     100
+         when iso_ctry_cd_2 =     'BE'    and    sls_chnl_cd = 'ONLINE' then     154
+         when iso_ctry_cd_2 =     'DK'    and    sls_chnl_cd = 'ONLINE' then     100
+         when iso_ctry_cd_2 =     'IE'    and    sls_chnl_cd = 'ONLINE' then     170
+         when iso_ctry_cd_2 =     'IT'    and    sls_chnl_cd = 'ONLINE' then     178
+         when iso_ctry_cd_2 =     'NL'    and    sls_chnl_cd = 'ONLINE' then     335
+         when iso_ctry_cd_2 =     'NO'    and    sls_chnl_cd = 'ONLINE' then     100
+         when iso_ctry_cd_2 =     'ES'    and    sls_chnl_cd = 'ONLINE' then     214
+         when iso_ctry_cd_2 =     'SE'    and    sls_chnl_cd = 'ONLINE' then     219
+         when iso_ctry_cd_2 =     'CH'    and    sls_chnl_cd = 'ONLINE' then     121
+
+    end;) by conn;
+
+
+quit;
+*/
+
+/* MB DDW Sample Processing */
+
+/*
+
+proc sql;
+
+connect to teradata as conn ( user="&td_user" pass="&td_pwd" database=&td_sas_db server=&td_server mode=teradata sql_functions=all);
+
+execute(
+    insert into sas_pulse_stg.comm_nps_sb_trans_smpl
+    select 
+        *
+    from sas_pulse_stg.comm_nps_sb_trans_final cntct
+    where cntct.email_addr_id not in (select email_addr_id from sas_pulse_stg.comm_nps_sb_trans_excl)
+        and cntct.cust_lcl_chnl_cd = '12' 
+        and cntct.email_addr_id not in (select cntct.email_addr_id from sas_pulse_stg.comm_nps_cntct_final cntct)
+    sample 750;) by conn;
+
+quit;
+
+*/
